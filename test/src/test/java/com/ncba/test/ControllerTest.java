@@ -3,6 +3,7 @@ package com.ncba.test;
 import com.ncba.test.controller.CustomerController;
 import com.ncba.test.entity.Customer;
 import com.ncba.test.model.Register;
+import com.ncba.test.model.VerifyRequest;
 import com.ncba.test.service.CustomerService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +67,25 @@ public class ControllerTest {
                 any(Register.class));
     }
 
+    @Test
+    void test_verify() {
+        when(customerService.verify(
+                any(VerifyRequest.class)
+        )).thenReturn(Mono.just(getCustomer()));
+
+        var baseUrl = "/api/v1/customers/verify";
+
+        getWsResponseBodySpec(
+                webTestClient.post().uri(baseUrl)
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .bodyValue(getVerifyRequest())
+                        .exchange());
+
+        verify(customerService).verify(
+                any(VerifyRequest.class));
+    }
+
     private void getWsResponseBodySpec(WebTestClient.ResponseSpec webTestClient) {
         webTestClient
                 .expectStatus().isOk();
@@ -83,6 +103,13 @@ public class ControllerTest {
         register.setEmail("m@g.com");
         register.setName("Test");
         register.setPassword("12hjhjsjifui");
+        return register;
+    }
+
+    private VerifyRequest getVerifyRequest() {
+        VerifyRequest register = new VerifyRequest();
+        register.setEmail("m@g.com");
+        register.setVerificationCode("12hjhjsjifui");
         return register;
     }
 }
