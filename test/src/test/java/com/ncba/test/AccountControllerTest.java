@@ -1,10 +1,14 @@
 package com.ncba.test;
 
+import com.ncba.test.controller.AccountController;
 import com.ncba.test.controller.CustomerController;
+import com.ncba.test.entity.Account;
 import com.ncba.test.entity.Customer;
+import com.ncba.test.model.FundRequest;
 import com.ncba.test.model.Register;
 import com.ncba.test.model.VerifyRequest;
 import com.ncba.test.service.CustomerService;
+import com.ncba.test.service.impl.AccountService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,13 +32,13 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class ControllerTest {
+public class AccountControllerTest {
 
     @InjectMocks
-    private CustomerController controller;
+    private AccountController controller;
 
     @Mock
-    private CustomerService customerService;
+    private AccountService accountService;
 
     private WebTestClient webTestClient;
 
@@ -50,66 +54,42 @@ public class ControllerTest {
 
     @Test
     void test_register() {
-        when(customerService.register(
-                any(Register.class)
-        )).thenReturn(Mono.just(getCustomer()));
+        when(accountService.fundAccount(
+                any(FundRequest.class)
+        )).thenReturn(Mono.just(getAccount()));
 
-        var baseUrl = "/api/v1/customers/register";
-
-        getWsResponseBodySpec(
-                webTestClient.post().uri(baseUrl)
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .bodyValue(getRegister())
-                        .exchange());
-
-        verify(customerService).register(
-                any(Register.class));
-    }
-
-    @Test
-    void test_verify() {
-        when(customerService.verify(
-                any(VerifyRequest.class)
-        )).thenReturn(Mono.just(getCustomer()));
-
-        var baseUrl = "/api/v1/customers/verify";
+        var baseUrl = "/api/v1/accounts/accounts";
 
         getWsResponseBodySpec(
                 webTestClient.post().uri(baseUrl)
                         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON)
-                        .bodyValue(getVerifyRequest())
+                        .bodyValue(getRequest())
                         .exchange());
 
-        verify(customerService).verify(
-                any(VerifyRequest.class));
+        verify(accountService).fundAccount(any(FundRequest.class));
     }
+
+    private FundRequest getRequest() {
+        FundRequest fundRequest = new FundRequest();
+        fundRequest.setAccountId(101L);
+        fundRequest.setAmount(5000.000);
+        return fundRequest;
+    }
+
 
     private void getWsResponseBodySpec(WebTestClient.ResponseSpec webTestClient) {
         webTestClient
                 .expectStatus().isOk();
     }
 
-    private Customer getCustomer() {
-        return Customer.builder()
-                .name(UUID.randomUUID().toString())
-                .email("m@g.com")
+    private Account getAccount() {
+        return Account.builder()
+                .balance(450.00)
+                .id(101L)
                 .build();
     }
 
-    private Register getRegister() {
-        Register register = new Register();
-        register.setEmail("m@g.com");
-        register.setName("Test");
-        register.setPassword("12hjhjsjifui");
-        return register;
-    }
 
-    private VerifyRequest getVerifyRequest() {
-        VerifyRequest register = new VerifyRequest();
-        register.setEmail("m@g.com");
-        register.setVerificationCode("12hjhjsjifui");
-        return register;
-    }
+
 }
