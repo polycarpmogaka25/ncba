@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: ncba
+    password: ''
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+app:
+  min-funding: ${MIN_FUNDING:500}
+  min-loan-amount: ${MIN_LOAN_AMOUNT:1000}
+  max-loan-amount: ${MAX_LOAN_AMOUNT:10000}
+  verification-code-length: ${VERIFICATION_CODE_LENGTH:6}
+
+logging:
+  level:
+    com:
+      ncba:
+        test: DEBUG
+    root: INFO
+  pattern:
+    console: '{"time":"%d{HH:mm:ss.SSS}","thread":"%thread","level":"%-5level","logger":"%logger{36}","message":"%msg"}%n'
