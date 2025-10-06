@@ -1,10 +1,10 @@
 package com.ncba.test;
 
-import com.ncba.test.controller.CustomerController;
 import com.ncba.test.entity.Customer;
-import com.ncba.test.model.Register;
-import com.ncba.test.model.VerifyRequest;
-import com.ncba.test.service.CustomerService;
+import com.ncba.test.model.LoanRequest;
+import com.ncba.test.model.LoanResponse;
+import com.ncba.test.model.Payment;
+import com.ncba.test.service.LoanService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -28,13 +29,12 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class CustomerControllerTest {
-
+public class LoanControllerTest {
     @InjectMocks
-    private CustomerController controller;
+    private LoanControllerTest controller;
 
     @Mock
-    private CustomerService customerService;
+    private LoanService loanService;
 
     private WebTestClient webTestClient;
 
@@ -49,41 +49,37 @@ public class CustomerControllerTest {
     }
 
     @Test
-    void test_register() {
-        when(customerService.register(
-                any(Register.class)
-        )).thenReturn(Mono.just(getCustomer()));
+    void test_verify() {
+        when(loanService.applyForLoan(
+                any(LoanRequest.class)
+        )).thenReturn(Mono.just(getResponse()));
 
-        var baseUrl = "/api/v1/customers/register";
+        var baseUrl = "/api/v1/loans/apply";
 
         getWsResponseBodySpec(
                 webTestClient.post().uri(baseUrl)
                         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON)
-                        .bodyValue(getRegister())
+                        .bodyValue(getLoanRequest())
                         .exchange());
 
-        verify(customerService).register(
-                any(Register.class));
+        verify(loanService).applyForLoan(
+                any(LoanRequest.class));
     }
 
-    @Test
-    void test_verify() {
-        when(customerService.verify(
-                any(VerifyRequest.class)
-        )).thenReturn(Mono.just(getCustomer()));
+    private LoanResponse getResponse() {
+        var payment = new Payment();
+        payment.setAmount(500);
+        payment.setMonth(9);
+        return new LoanResponse(List.of(payment));
+    }
 
-        var baseUrl = "/api/v1/customers/verify";
-
-        getWsResponseBodySpec(
-                webTestClient.post().uri(baseUrl)
-                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .bodyValue(getVerifyRequest())
-                        .exchange());
-
-        verify(customerService).verify(
-                any(VerifyRequest.class));
+    private LoanRequest getLoanRequest() {
+        return LoanRequest.builder()
+                .accountId(101L)
+                .amount(5000.000)
+                .tenure(12)
+                .build();
     }
 
     private void getWsResponseBodySpec(WebTestClient.ResponseSpec webTestClient) {
@@ -96,20 +92,5 @@ public class CustomerControllerTest {
                 .name(UUID.randomUUID().toString())
                 .email("m@g.com")
                 .build();
-    }
-
-    private Register getRegister() {
-        var register = new Register();
-        register.setEmail("m@g.com");
-        register.setName("Test");
-        register.setPassword("12hjhjsjifui");
-        return register;
-    }
-
-    private VerifyRequest getVerifyRequest() {
-        var register = new VerifyRequest();
-        register.setEmail("m@g.com");
-        register.setVerificationCode("12hjhjsjifui");
-        return register;
     }
 }

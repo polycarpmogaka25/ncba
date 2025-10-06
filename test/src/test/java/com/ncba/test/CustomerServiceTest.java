@@ -14,14 +14,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import reactor.test.StepVerifier;
 
-import static org.hamcrest.Matchers.any;
+import java.util.Optional;
+
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CustomerServiceTest {
+class CustomerServiceTest {
     @Mock
     private CustomerRepo customerRepository;
 
@@ -37,38 +38,57 @@ public class CustomerServiceTest {
     @InjectMocks
     private CustomerServiceImpl customerService;
 
+
     @Test
-    void register_ShouldCreatePendingCustomerAndSendEmail() {
-        var request = new Register();
-        request.setName("John Doe");
-        request.setEmail("john@example.com");
-        request.setPassword("password123");
+    void register_ShouldSucceedAndSendEmail() {
+        var request = new Register("Jane Doe", "jane@test.com", "securepwd");
+        var encodedPassword = "ENCODED_HASH";
+        var verificationCode = "123456";
 
-        var savedCustomer = new Customer();
-        savedCustomer.setId(1L);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn(encodedPassword);
+        when(utils.generateVerificationCode()).thenReturn(verificationCode);
 
-        when(passwordEncoder.encode("password123")).thenReturn("hashedPass");
-        when(utils.generateVerificationCode()).thenReturn("xrfctgyvhbjnk");
+        when(customerRepository.save(any())).thenAnswer(invocation -> {
+            Customer c = invocation.getArgument(0);
+            c.setId(10L);
+            return c;
+        });
 
-        var result = customerService.register(request);
+        StepVerifier.create(customerService.register(request))
+                .expectNextMatches(cust ->
+                        cust.getEmail().equals(request.getEmail()) &&
+                                cust.getPassword().equals(encodedPassword) &&
+                                cust.getVerificationCode().equals(verificationCode)
+                )
+                .verifyComplete();
 
-        verify(utils).sendVerificationEmailAsync(eq("john@example.com"), any(String.class).toString());
+        verify(utils, times(1)).sendVerificationEmailAsync(eq(request.getEmail()), eq(verificationCode));
     }
 
     @Test
-    void verify_ShouldActivateCustomerAndCreateAccount() {
-        var request = new VerifyRequest();
-        request.setEmail("john@example.com");
-        request.setVerificationCode("ABC123");
-        Customer existing = new Customer();
-        existing.setId(1L);
-        existing.setEmail("john@example.com");
-        existing.setVerificationCode("ABC123");
-        existing.setStatus(CustomerStatus.PENDING_VERIFICATION);
-        when(customerRepository.findByEmail("john@example.com")).thenReturn(java.util.Optional.of(existing));
+    void verify_ShouldSucceedAndCreateAccount() {
+        var email = "verified@test.com";
+        var correctCode = "654321";
+        var verifyRequest = new VerifyRequest(email, correctCode);
 
-        var result = customerService.verify(request);
+        var existingCustomer = new Customer(102L, "name", email, "password", correctCode, CustomerStatus.PENDING_VERIFICATION);
 
-        verify(accountService).createAccount(existing);
+        when(customerRepository.findByEmail(email)).thenReturn(Optional.of(existingCustomer));
+
+        when(customerRepository.save(existingCustomer)).thenAnswer(invocation -> {
+            Customer c = invocation.getArgument(0);
+            c.setStatus(CustomerStatus.ACTIVE);
+            c.setVerificationCode(null);
+            return c;
+        });
+
+        StepVerifier.create(customerService.verify(verifyRequest))
+                .expectNextMatches(customer ->
+                        customer.getStatus() == CustomerStatus.ACTIVE &&
+                                customer.getVerificationCode() == null
+                )
+                .verifyComplete();
+
+        verify(accountService, times(1)).createAccount(existingCustomer);
     }
 }

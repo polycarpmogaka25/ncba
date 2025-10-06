@@ -1,13 +1,8 @@
 package com.ncba.test;
 
 import com.ncba.test.controller.AccountController;
-import com.ncba.test.controller.CustomerController;
 import com.ncba.test.entity.Account;
-import com.ncba.test.entity.Customer;
 import com.ncba.test.model.FundRequest;
-import com.ncba.test.model.Register;
-import com.ncba.test.model.VerifyRequest;
-import com.ncba.test.service.CustomerService;
 import com.ncba.test.service.impl.AccountService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,8 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
-
-import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -89,7 +82,6 @@ public class AccountControllerTest {
                 .id(101L)
                 .build();
     }
-
 
 
 }

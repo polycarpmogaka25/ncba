@@ -16,15 +16,14 @@ import reactor.core.scheduler.Schedulers;
 public class AccountService {
     private static final Logger log = LoggerFactory.getLogger(AccountService.class);
 
-    private AccountRepo accountRepository;
+    private final AccountRepo accountRepository;
 
-    public Account createAccount(Customer customer) {
+    public void createAccount(Customer customer) {
         log.info("Creating account for customer: ID {}", customer.getId());
         Account account = new Account();
         account.setCustomer(customer);
         account = accountRepository.save(account);
         log.info("Account created: ID {}", account.getId());
-        return account;
     }
 
     public Mono<Account> fundAccount(FundRequest request) {
