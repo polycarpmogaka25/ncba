@@ -21,9 +21,6 @@ Spring Boot microservice for customer onboarding, account funding, and loan appl
 - **Docker**: `docker build -t digital-banking .` then `docker run -p 8080:8080 digital-banking`
 - **Cloud (AWS Example)**:
     - Deploy JAR/Docker to ECS (Fargate) or EKS for auto-scaling based on CPU (>70% -> scale out).
-    - DB: Migrate to RDS PostgreSQL (update `spring.datasource.url` via env vars).
-    - Config/Secrets: AWS Secrets Manager for passwords, Parameter Store for business params.
-    - Monitoring: CloudWatch for logs/metrics.
     - 12-Factor: Env vars for all config, stateless (DB external), logs to stdout.
     - Scaling: Horizontal pod autoscaler in EKS, handle traffic spikes for onboarding.
 
