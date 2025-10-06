@@ -39,17 +39,33 @@ public class CustomerServiceTest {
 
     @Test
     void register_ShouldCreatePendingCustomerAndSendEmail() {
-        var request = new Register();
+        Register request = new Register();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setPassword("password123");
-        var savedCustomer = new Customer();
+
+        Customer savedCustomer = new Customer();
         savedCustomer.setId(1L);
+        savedCustomer.setStatus(CustomerStatus.PENDING_VERIFICATION);
+
         when(passwordEncoder.encode("password123")).thenReturn("hashedPass");
+        when(utils.generateVerificationCode()).thenReturn("xrfctgyvhbjnk");
+        when(customerRepository.save(any(Customer.class))).thenReturn(savedCustomer);
 
-        var result = customerService.register(request);
+        // When & Then
+        StepVerifier.create(customerService.register(request))
+                .expectNextMatches(result ->
+                        result.getId().equals(1L) &&
+                                result.getName().equals("John Doe") &&
+                                result.getEmail().equals("john@example.com") &&
+                                result.getPassword().equals("hashedPass") &&
+                                result.getVerificationCode().equals("xrfctgyvhbjnk") &&
+                                CustomerStatus.PENDING_VERIFICATION.equals(result.getStatus())
+                )
+                .verifyComplete();
 
-        verify(utils).sendVerificationEmailAsync(eq("john@example.com"), any(String.class).toString());
+        verify(utils).sendVerificationEmailAsync(eq("john@example.com"), eq("xrfctgyvhbjnk"));
+        verify(customerRepository).save(any(Customer.class));
     }
 
     @Test
