@@ -47,8 +47,7 @@ public class LoanServiceImpl implements LoanService {
                         log.warn("Loan amount out of range: {} (min: {}, max: {})", request.getAmount(), minLoanAmount, maxLoanAmount);
                         return Mono.error(new RuntimeException("Loan amount must be between KES " + minLoanAmount + " and KES " + maxLoanAmount));
                     }
-                    // Mock call to Core Banking Service
-                    List<Payment> schedule = generateLoanSchedule(request.getAmount(), request.getTenure());
+                    var schedule = generateLoanSchedule(request.getAmount(), request.getTenure());
                     log.info("Loan approved. Schedule generated with {} installments", schedule.size());
                     return Mono.just(new LoanResponse(schedule));
                 });

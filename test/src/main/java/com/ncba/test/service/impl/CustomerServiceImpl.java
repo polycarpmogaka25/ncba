@@ -33,14 +33,14 @@ public class CustomerServiceImpl implements CustomerService {
     public Mono<Customer> register(Register request) {
         log.info("Registering customer: {}", request.getEmail());
         return Mono.fromCallable(() -> {
-                    Customer customer = new Customer();
+                    var customer = new Customer();
                     customer.setName(request.getName());
                     customer.setEmail(request.getEmail());
                     customer.setPassword(passwordEncoder.encode(request.getPassword()));
                     customer.setVerificationCode(utils.generateVerificationCode());
                     return customer;
                 })
-                .map(customer -> customerRepository.save(customer))
+                .map(customerRepository::save)
                 .doOnSuccess(customer -> utils.sendVerificationEmailAsync(customer.getEmail(), customer.getVerificationCode()))
                 .subscribeOn(Schedulers.boundedElastic());
     }
@@ -60,7 +60,7 @@ public class CustomerServiceImpl implements CustomerService {
                     customer.setVerificationCode(null);
                     return Mono.fromCallable(() -> customerRepository.save(customer))
                             .subscribeOn(Schedulers.boundedElastic())
-                            .doOnSuccess(savedCustomer -> accountService.createAccount(savedCustomer))
+                            .doOnSuccess(accountService::createAccount)
                             .doOnSuccess(savedCustomer -> log.info("Customer verified and account created: ID {}", savedCustomer.getId()));
                 });
     }
